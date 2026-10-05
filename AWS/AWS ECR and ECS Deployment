@@ -1,0 +1,151 @@
+AWS ECR & ECS Deployment
+1. ECR — Push Docker Image
+
+Flow:
+
+Create ECR Repository
+        ↓
+View Push Commands
+        ↓
+Create IAM Role
+        ↓
+Give ECR Permissions
+        ↓
+Attach Role to EC2
+        ↓
+Login to EC2
+        ↓
+Execute Docker / ECR Commands
+        ↓
+Docker Image → ECR
+
+Steps
+
+Create ECR Repository
+
+Create a repository for the application image.
+
+View Push Commands
+
+Open the repository → View push commands.
+
+Create IAM Role
+
+Create an IAM role with required ECR permissions.
+
+Attach the role to the EC2 instance.
+
+Push Image
+
+Login to EC2.
+
+Build the Docker image.
+
+Authenticate Docker with ECR.
+
+Tag the image.
+
+Push the image to ECR.
+
+Docker Image
+     ↓
+   Build
+     ↓
+   Tag
+     ↓
+   Push
+     ↓
+ECR Repository
+
+2. ECS — Run Application
+
+Flow:
+
+ECS Cluster
+    ↓
+Task Definition
+    ↓
+Select ECR Image
+    ↓
+Create ECS Service
+    ↓
+Select Task Definition
+    ↓
+Select Fargate
+    ↓
+Set Desired Tasks / Replicas
+    ↓
+Configure VPC + Subnet + Security Group
+    ↓
+Create Service
+    ↓
+Running ECS Tasks
+
+Steps
+
+Create ECS Cluster
+
+Create the ECS cluster.
+
+Create Task Definition
+
+Define how the container should run.
+
+Select the ECR image.
+
+Configure CPU, memory, container port, environment variables, etc.
+
+Create Service
+
+Select the cluster.
+
+Select the task definition.
+
+Select Fargate.
+
+Set the required number of replicas/tasks.
+
+Networking
+
+Select VPC.
+
+Select subnets.
+
+Configure the security group.
+
+Configure public/private networking as required.
+
+Complete Flow
+                    ECR
+                     │
+              Create Repository
+                     ↓
+              Build Docker Image
+                     ↓
+              Push Image to ECR
+                     │
+                     ↓
+                    ECS
+                     │
+              Create Cluster
+                     ↓
+             Create Task Definition
+                     ↓
+              Select ECR Image
+                     ↓
+               Create Service
+                     ↓
+                 Fargate
+                     ↓
+              Set Replicas/Tasks
+                     ↓
+             Configure Networking
+                     ↓
+               Running Application
+
+Key Difference
+ECR     → Stores the Docker Image
+ECS     → Manages the Container
+Fargate → Runs the Container without managing EC2 servers
+Task Definition → Tells ECS what/how to run
+Service → Maintains the required number of Tasks
