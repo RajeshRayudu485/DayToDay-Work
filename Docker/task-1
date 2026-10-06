@@ -21,12 +21,13 @@ The pipeline should:
 TASK
   
 pipeline {
-    agent any 
+    agent {
+        node {
+            label 'prod'
+        }
+    }
     tools {
         maven 'MyMaven'
-    }
-    environment {
-        MYSQL_ROOT_PASSWORD='devopspassword'
     }
     stages {
         stage ("Code") {
@@ -41,61 +42,59 @@ pipeline {
         }
         stage ("CQA") {
             steps {
-                withSonarQubeEnv(credentialsId: 'mysonar', installationName: 'mysonar') {
-                    sh '''
-                    mvn clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-                    -Dsonar.projectKey=my-appilication \
-                    -Dsonar.projectName='my appilication' \
-                    -Dsonar.host.url=http://54.153.13.81:9000 \
-                    -Dsonar.token=sqp_ea8d9e9761b68df78697a021724c886b39ea1855
-                    '''
+                withSonarQubeEnv('mysonar') {
+                   sh 'mvn clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=myproject'
                 }
             }
         }
-        stage ("Quality Gates") {
+        stage ("QualityGates") {
             steps {
                 waitForQualityGate abortPipeline: true, credentialsId: 'mysonar'
             }
         }
         stage ("Artifact") {
             steps {
-                nexusArtifactUploader artifacts: [[artifactId: 'vprofile', classifier: '', file: 'target/vprofile-v2.war', type: 'war']], credentialsId: 'nexus', groupId: 'com.visualpathit', nexusUrl: '54.219.176.15:8081', nexusVersion: 'nexus3', protocol: 'http', repository: 'MyRepo', version: 'V2'
+                nexusArtifactUploader artifacts: [[artifactId: 'vprofile', classifier: '', file: 'target/vprofile-v2.war', type: 'war']], credentialsId: 'nexus', groupId: 'com.visualpathit', nexusUrl: '54.176.241.88:8081', nexusVersion: 'nexus3', protocol: 'http', repository: 'MyRepo', version: 'v2'
             }
         }
-        stage ("Docker Build") {
+        stage ("Images") {
             steps {
-                sh  '''
-                    docker build \
-                    -t appimage:latest \
-                    -f Docker-app/Dockerfile \
-                .
-
-                    docker build \
-                    -t dbimage:latest \
-                    -f Docker-db/Dockerfile \
-                    Docker-db
-                '''
+                sh 'cp -r target Docker-app'
+                sh  'docker build -t appimage Docker-app' 
+                sh  'docker build -t dbimage Docker-db' 
             }
         }
-        stage ("Trivy Scan") {
+        stage ("Scan Images") {
             steps {
-                sh '''
-                    trivy image --scanners vuln --timeout 5m appimage:latest
-                    trivy image --scanners vuln --timeout 5m dbimage:latest
-                '''
+                sh 'trivy image appimage:latest >> appimage.txt'
+                sh 'trivy image dbimage:latest >> dbimage.txt'
             }
         }
-        stage ("Compose") {
+        stage ("Docker Registry") {
             steps {
-                sh 'docker compose -f compose.yml up -d'
+                script {
+                    withDockerRegistry(credentialsId:'Docker') {
+                        sh 'docker tag appimage rajeshrayudu2022/mydeploy:javaapp'
+                        sh 'docker tag dbimage rajeshrayudu2022/mydeploy:db'
+                        sh 'docker push rajeshrayudu2022/mydeploy:javaapp'
+                        sh 'docker push rajeshrayudu2022/mydeploy:db'
+                    }
+                }
+            }
+        }
+        stage ("Deploy") {
+            steps {
+                sh 'docker stack deploy myapp --compose-file=compose.yml'
             }
         }
     }
-}
-post {
+    post {
         success {
-            mail to: 'rajeshrayudu122@gmail.com',
-            subject: "Build Status: ${currentBuild.fullDisplayName}",
-            body: "The build ${env.BUILD_NUMBER} finished with status: ${currentBuild.currentResult}. View logs at: ${env.BUILD_URL}"
+            mail(
+                to: 'rajeshrayudu122@gmail.com',
+                subject: "Build Status: ${currentBuild.fullDisplayName}",
+                body: "Build ${env.BUILD_NUMBER} finished with status: ${currentBuild.currentResult}. View logs at: ${env.BUILD_URL}"
+            )
         }
+    }
 }
