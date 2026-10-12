@@ -1,1 +1,84 @@
+pipeline {
+    agent {
+        node {
+            label 'prod'
+        }
+    }
+    stages {
+        stage ("Code") {
+            steps {
+                git 'https://github.com/RajeshRayudu485/python-code-library-app.git'
+            }
+        }
+        stage ("CQA") {
+            steps {
+                withSonarQubeEnv('mysonar') {
+                    sh '''
+                       set -eu
+                       set +x
 
+                       .venv/bin/python -m pip show pysonar
+
+                       .venv/bin/pysonar \
+                       --sonar-host-url=http://54.215.109.180:9000 \
+                       --sonar-token=sqp_bf1ed32c36250f2d891bc94e474f318ebb794180 \
+                       --sonar-project-key=book-application
+                    '''
+                }
+            }
+        }
+        stage ("Quality Gates") {
+            steps {
+                waitForQualityGate abortPipeline: true, credentialsId: 'mysonar'
+            }
+        }
+        stage ("Images") {
+            steps {
+                sh 'docker build -t auth-service-image auth'
+                sh 'docker build -t borrow-service-image borrow'
+                sh 'docker build -t book-service-image book'
+                sh 'docker build -t db-image database'
+                sh 'docker build -t frontend-image .'
+            }
+        }
+        stage ("Trivy") {
+            steps {
+                sh 'trivy image auth-service-image >> auth.txt'
+                sh 'trivy image borrow-service-image >> borrow.txt'
+                sh 'trivy image book-service-image >> book.txt'
+                sh 'trivy image db-image >> database.txt'
+                sh 'trivy image frontend-image >> frontend.txt'
+            }
+        }
+        stage ("Docker Registry") {
+            steps {
+                withDockerRegistry(credentialsId: 'Docker') {
+                sh 'docker tag auth-service-image rajeshrayudu2022/library-app:auth-service'
+                sh 'docker push rajeshrayudu2022/library-app:auth-service'
+                sh 'docker tag borrow-service-image rajeshrayudu2022/library-app:borrow-service'
+                sh 'docker push rajeshrayudu2022/library-app:borrow-service'
+                sh 'docker tag book-service-image rajeshrayudu2022/library-app:book-service'
+                sh 'docker push rajeshrayudu2022/library-app:book-service'
+                sh 'docker tag db-image rajeshrayudu2022/library-app:database'
+                sh 'docker push rajeshrayudu2022/library-app:database'
+                sh 'docker tag frontend-image rajeshrayudu2022/library-app:frontend'
+                sh 'docker push rajeshrayudu2022/library-app:frontend'
+                }
+            }
+        }
+        stage ("Deploy") {
+            steps {
+                sh 'docker stack deploy library-app --compose-file=compose.yml'
+            }
+        }
+    }
+    post {
+        success {
+            mail(
+                to: 'rajeshrayudu122@gmail.com',
+                subject: "Build Status: ${currentBuild.fullDisplayName}",
+                body: "Build ${env.BUILD_NUMBER} finished with status: ${currentBuild.currentResult}. View logs at: ${env.BUILD_URL}"
+            )
+        }
+    }
+}
