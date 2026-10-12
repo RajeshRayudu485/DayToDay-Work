@@ -1,3 +1,33 @@
+Task-2
+1. GitHub
+
+Checkout source code
+
+2. Python + pytest
+
+Install dependencies and run tests
+
+3. SonarQube
+
+Code analysis and Quality Gate
+
+4. Docker
+
+Build application and database images
+
+5. Trivy
+
+Scan images for vulnerabilities
+
+6. Docker Compose
+
+Deploy and check application health
+
+7. Email
+
+Notify after successful deployment
+
+
 pipeline {
     agent {
         node {
