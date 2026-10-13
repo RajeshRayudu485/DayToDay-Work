@@ -172,9 +172,27 @@ spec:
       image: nginx:latest
       ports:
         - containerPort: 80
+10. Step 8: Deploy the Pod Using the Manifest
+Explanation:
 
+The kubectl apply command creates or updates Kubernetes resources based on the configuration in a manifest file.
+
+Apply the manifest:
+
+kubectl apply -f pod.yml
+Verify the Pod:
+
+kubectl get pods
+Check detailed information:
+
+kubectl describe pod nginx-pod
+Inspect the Pod configuration:
+
+kubectl get pod nginx-pod -o yaml
 
 Explanation of the YAML fields
+
+11.
 
 
 
