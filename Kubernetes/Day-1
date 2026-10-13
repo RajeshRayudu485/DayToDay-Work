@@ -1,0 +1,188 @@
+Kubernetes Day 1: Docker, Minikube, kubectl, and Pod Setup
+1. Objective
+The objective of this task is to set up a local Kubernetes environment on a Linux server using Docker and Minikube, install kubectl, create a Pod using Nginx, and deploy a Pod using a YAML manifest file.
+
+2. Workflow
+Start
+  |
+  v
+Install Docker
+  |
+  v
+Start and Enable Docker
+  |
+  v
+Install Minikube
+  |
+  v
+Start Minikube Cluster
+  |
+  v
+Verify Minikube Status
+  |
+  v
+Install kubectl
+  |
+  v
+Verify kubectl Installation
+  |
+  v
+Create Nginx Pod Using Command
+  |
+  v
+Check Pod Status
+  |
+  v
+Create pod.yml Manifest File
+  |
+  v
+Deploy Pod Using YAML
+  |
+  v
+Verify Pod
+  |
+  v
+End
+3. Step 1: Install Docker
+Explanation:
+
+Docker is a container platform used to build and run containers. In this setup, Minikube uses Docker as its driver to run the local Kubernetes environment.
+
+Install Docker using the official instructions for your Linux distribution:
+
+https://docs.docker.com/engine/install/
+
+After installation, start Docker and enable it to start automatically when the server boots.
+
+Commands:
+
+sudo systemctl start docker
+sudo systemctl enable docker
+sudo systemctl status docker
+Expected result: The Docker service should show active (running).
+
+4. Step 2: Install Minikube
+Explanation:
+
+Minikube runs a local Kubernetes cluster on your machine. It is useful for learning Kubernetes concepts and testing applications without requiring a production cluster.
+
+Open the official Minikube installation page:
+
+https://minikube.sigs.k8s.io/docs/start/
+
+Select Linux, choose the correct architecture and installation method, and run the installation command provided by the official documentation.
+
+Verify installation:
+
+minikube version
+Expected result: The installed Minikube version should be displayed.
+
+5. Step 3: Start the Minikube Cluster
+Explanation:
+
+Start the Kubernetes cluster using Docker as the driver. Minikube creates and manages the local cluster.
+
+Command:
+
+minikube start --driver=docker
+If Minikube reports a specific issue that requires bypassing its root-user check, review the error and documentation before considering --force:
+
+minikube start --driver=docker --force
+Note: Avoid using --force by default. Running Minikube as root or bypassing safety checks may cause configuration issues.
+
+Expected result: Minikube should start successfully and configure the Kubernetes environment.
+
+6. Step 4: Verify Minikube Status
+Explanation:
+
+Check whether the Minikube cluster and its core components are running.
+
+Command:
+
+minikube status
+Expected result: The output should indicate that the relevant components, such as the host, kubelet, and API server, are running.
+
+You can also check the cluster nodes:
+
+minikube kubectl -- get nodes
+7. Step 5: Install kubectl
+Explanation:
+
+kubectl is the Kubernetes command-line tool. It allows us to create, inspect, update, and delete Kubernetes resources such as Pods, Deployments, and Services.
+
+Follow the official Linux installation guide:
+
+https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/
+
+Download the appropriate Linux binary and place it in the directory where you downloaded it.
+
+Give execution permission:
+
+chmod +x kubectl
+Move it to a directory in the system PATH:
+
+sudo mv kubectl /usr/local/bin/
+Verify installation:
+
+kubectl version --client
+Check cluster connectivity:
+
+kubectl get nodes
+If the kubectl command cannot connect to the cluster, check your Kubernetes context and Minikube status.
+
+kubectl config current-context
+minikube status
+8. Step 6: Create a Pod Using the kubectl Command
+Explanation:
+
+A Pod is the smallest deployable unit in Kubernetes. It can contain one or more containers that share networking and other resources.
+
+In this step, create a Pod named mypod using the Nginx container image.
+
+Command:
+
+kubectl run mypod --image=nginx
+Verify the Pod:
+
+kubectl get pods
+Check detailed information:
+
+kubectl describe pod mypod
+Expected result: The Pod should eventually reach the Running state.
+
+If the Pod remains in Pending or ImagePullBackOff, inspect the output of kubectl describe pod mypod to identify the issue.
+
+9. Step 7: Create a Pod Manifest File
+Explanation:
+
+A Kubernetes manifest is a YAML file that describes the desired state of a resource. Instead of creating resources directly through a command, we can define their configuration in a file and apply it to the cluster.
+
+Create a file named pod.yml:
+
+vi pod.yml
+Add the following YAML configuration:
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+spec:
+  containers:
+    - name: nginx-container
+      image: nginx:latest
+      ports:
+        - containerPort: 80
+
+
+Explanation of the YAML fields
+
+
+
+apiVersion: v1 — Specifies the Kubernetes API version for a Pod.
+kind: Pod — Defines the resource type.
+metadata.name — Specifies the Pod name.
+spec — Describes the desired configuration of the Pod.
+containers — Lists the containers that run inside the Pod.
+name — Defines the container name.
+image: nginx:latest — Specifies the container image.
+containerPort: 80 — Documents the port on which the Nginx container listens. This alone does not expose the application outside the cluster.
