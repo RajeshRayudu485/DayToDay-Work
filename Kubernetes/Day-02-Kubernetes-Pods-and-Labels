@@ -1,0 +1,110 @@
+Day 02: Kubernetes Pods, Labels and Selectors
+Objective
+
+Practice Kubernetes Pod management and understand how labels and selectors work using a KOPS-managed cluster on AWS.
+
+Topics Covered
+Verify Kubernetes cluster nodes
+Create Pods using kubectl run
+Create Pods using YAML manifests
+Inspect Pods using kubectl describe
+List Pods and view their labels
+Add, update, and remove labels
+Filter Pods using label selectors
+Delete Pods
+Clean up the KOPS cluster after practice
+1. Verify the Cluster
+kubectl get nodes
+kubectl get node
+kubectl get no
+
+2. Create a Pod
+kubectl run pod-1 --image=nginx
+kubectl get po
+
+3. Create a Pod Using YAML
+
+Create pod.yml:
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-2
+  labels:
+    app: swiggy
+    env: dev
+spec:
+  containers:
+    - name: app-cont
+      image: shaikmustafa/dm
+      ports:
+        - containerPort: 80
+
+
+Create or update the Pod:
+
+kubectl apply -f pod.yml
+kubectl get po
+kubectl get po -o wide
+kubectl describe pod pod-2
+
+4. View Pod Labels
+kubectl get po --show-labels
+
+5. Add and Update Labels
+kubectl label pod pod-2 client=flm
+kubectl label pod pod-2 app=zomato --overwrite
+kubectl get po --show-labels
+
+
+Restore the original app label if required:
+
+kubectl label pod pod-2 app=swiggy --overwrite
+
+6. Filter Pods Using Selectors
+kubectl get po -l app=swiggy
+kubectl get po -l env=test
+kubectl get po -l client=flm
+kubectl get po -l 'client!=flm'
+
+
+Match multiple possible values:
+
+kubectl get po -l 'app in (swiggy,zomato)'
+kubectl get po -l 'app in (swiggy)'
+kubectl get po -l 'app in (zomato)'
+
+
+Match multiple requirements:
+
+kubectl get po -l 'app=swiggy,env=dev'
+
+7. Remove Labels
+kubectl label pod pod-2 client-
+kubectl get po --show-labels
+
+
+Remove multiple labels from pod-1 if they exist:
+
+kubectl label pod pod-1 app- client- env-
+
+8. Delete a Pod
+kubectl delete pod pod-1
+kubectl get po
+
+9. Delete the KOPS Cluster After Practice
+
+Verify the state store and cluster name before deleting:
+
+export KOPS_STATE_STORE=s3://mustafa-kops777
+kops get cluster
+kops delete cluster --name rajesh.k8s.local --yes
+
+
+Warning: Cluster deletion is destructive and may remove AWS resources. Confirm the cluster name and account before proceeding.
+
+Learning Outcome
+
+Today I practiced Pod creation and inspection, YAML manifests, label management, label selectors, and Kubernetes cluster cleanup.
+
+I will continue adding my daily Kubernetes and DevOps hands-on practice to this repository.
