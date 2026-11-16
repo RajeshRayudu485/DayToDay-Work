@@ -1,0 +1,139 @@
+Task-2: End-to-End CI/CD Pipeline with Jenkins, Docker & Kubernetes GitOps
+1. GitHub
+
+Checkout source code from GitHub.
+
+2. Maven
+
+Install dependencies.
+
+Compile and build the application.
+
+Generate WAR artifact.
+
+3. SonarQube
+
+Perform code quality analysis.
+
+Check Quality Gate.
+
+4. Nexus
+
+Upload the generated WAR artifact.
+
+5. Docker
+
+Build application image.
+
+Build database image.
+
+6. Trivy
+
+Scan application and database images for vulnerabilities.
+
+7. Docker Hub
+
+Tag and push Docker images to Docker Hub.
+
+8. GitOps Repository
+
+Update Kubernetes deployment image tags.
+
+Push updated Kubernetes manifests to GitHub.
+
+9. Argo CD
+
+Monitor GitOps repository.
+
+Detect configuration changes.
+
+Automatically synchronize changes with Kubernetes.
+
+10. Kubernetes
+
+Deploy application and database pods.
+
+Expose application using Kubernetes Services.
+
+Perform rolling updates.
+
+Check pod and application health.
+
+11. Prometheus
+
+Collect Kubernetes cluster metrics.
+
+Monitor CPU, memory and pod health.
+
+12. Grafana
+
+Visualize Kubernetes metrics.
+
+Create monitoring dashboards.
+
+Configure alerts for application and infrastructure health.
+
+pipeline {
+    agent any 
+    tools {
+        maven 'mymaven'
+    }
+    stages {
+        stage("Code") {
+            steps {
+                git branch: 'main', url: 'https://github.com/RajeshRayudu485/docker-webapp-k8s.git'
+            }
+        }
+        stage("Build") {
+            steps {
+                sh 'mvn clean install'
+            }
+        }
+        stage("CQA") {
+            steps {
+                withSonarQubeEnv('mysonar') {
+                   sh 'mvn clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=myproject'
+                }
+            }
+        }
+        stage("QualityGates") {
+            steps {
+                waitForQualityGate abortPipeline: true, credentialsId: 'sonarcred'
+            }
+        }
+        stage("Artifact") {
+            steps {
+                nexusArtifactUploader artifacts: [[artifactId: 'vprofile', classifier: '', file: 'target/vprofile-v2.war', type: 'war']], credentialsId: 'nexus-credentails', groupId: 'com.visualpathit', nexusUrl: '43.205.203.5:8081/', nexusVersion: 'nexus3', protocol: 'http', repository: 'Myrepo', version: 'v2'
+            }
+        }
+        stage("Images") {
+            steps {
+                sh 'docker build -t apimage .'
+                sh 'docker build -t dbimage Docker-db'
+            }
+        }
+        stage("ImageScan") {
+            steps {
+                sh 'trivy image apimage >> appreports.txt'
+                sh 'trivy image dbimage >> dbreports.txt'
+            }
+        }
+        stage("DockerRegistry") {
+            steps {
+                script {
+                      withDockerRegistry(credentialsId:'docker-credentails') {
+                      sh 'docker tag apimage rajeshrayudu2022/k8swebapp:application'
+                      sh 'docker tag dbimage rajeshrayudu2022/k8swebapp:database'
+                      sh 'docker push rajeshrayudu2022/k8swebapp:application'
+                      sh 'docker push rajeshrayudu2022/k8swebapp:database'
+                      }
+                }
+            }
+        }
+        stage("Docker Compose") {
+            steps {
+                sh 'docker-compose up -d'
+            }
+        }
+    }
+}
